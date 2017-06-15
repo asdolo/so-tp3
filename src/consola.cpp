@@ -9,7 +9,7 @@
 #include "consola.hpp"
 #include "HashMap.hpp"
 #include "mpi.h"
-
+#include <queue> 
 using namespace std;
 
 #define CMD_LOAD    "load"
@@ -20,20 +20,52 @@ using namespace std;
 #define CMD_SQUIT   "q"
 
 static unsigned int np;
-
+queue<unsigned int>* nodosLibres;
 // Crea un ConcurrentHashMap distribuido
 static void load(list<string> params) {
 
     for (list<string>::iterator it=params.begin(); it != params.end(); ++it) {
        // TODO: Implementar
+        unsigned int proximoNodoLibre= ProximoNodoLibre();
+        //send //
     }
 
+
+    
+    while(true){
+        //Espero un mensaje diciendo que se libero
+        //recv
+        //Si hay mas de uno los encolo
+        //encolo el que se libero
+        if(nodosLibres->size()==np){
+            break;
+        }
+    }
     cout << "La listá esta procesada" << endl;
+}
+unsigned int ProximoNodoLibre(){
+    unsigned int res;
+    if (nodosLibres->empty())
+    {
+        //PREGUNTAR! Como y donde atender los mensajes? Un thread? 
+        //Espero un mensaje diciendo que se libero
+        //recv
+        //Si hay mas de uno los encolo
+        //encolo el que se libero
+    }
+    return nodosLibres->pop();
+
 }
 
 // Esta función debe avisar a todos los nodos que deben terminar
 static void quit() {
     // TODO: Implementar
+
+    for (int i = 0; i < nodosLibres->size(); ++i)
+    {
+        nodosLibres->pop();
+    }
+    delete nodosLibres;
 }
 
 // Esta función calcula el máximo con todos los nodos
@@ -151,6 +183,7 @@ static bool procesar_comandos() {
 
 void consola(unsigned int np_param) {
     np = np_param;
+    InicializarEstructuras();
     printf("Comandos disponibles:\n");
     printf("  "CMD_LOAD" <arch_1> <arch_2> ... <arch_n>\n");
     printf("  "CMD_ADD" <string>\n");
@@ -163,5 +196,13 @@ void consola(unsigned int np_param) {
         printf("> ");
         fflush(stdout);
         fin = procesar_comandos();
+    }
+}
+void InicializarEstructuras(){
+    //Inicializo la cola de nodos libres.
+    nodosLibres = new queue<unsigned int>();
+    for (unsigned int i = 0; i < np; i++)
+    {
+        nodosLibres->push(i);
     }
 }

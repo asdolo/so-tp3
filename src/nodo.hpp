@@ -2,6 +2,7 @@
 #define _NODO_H
 
 #define BUFFER_SIZE 1024
+#define COMANDO_LOAD 1
 
 /* Función que maneja un nodo.
  * Recibe el rank del nodo.

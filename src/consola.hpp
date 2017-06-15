@@ -7,5 +7,6 @@
  * Recibe la cantidad total de nodos.
  */
 void consola(unsigned int np);
-
+unsigned int ProximoNodoLibre();
+void InicializarEstructuras();
 #endif  /* _CONSOLA_H */
