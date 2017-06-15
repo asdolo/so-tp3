@@ -2,6 +2,8 @@
 #define _NODO_H
 
 #define BUFFER_SIZE 1024
+#define MPI_SOURCE_CONSOLA 0
+
 #define COMANDO_LOAD 1
 
 /* Función que maneja un nodo.

@@ -22,54 +22,85 @@ using namespace std;
 static unsigned int np;
 queue<unsigned int>* nodosLibres;
 // Crea un ConcurrentHashMap distribuido
-static void load(list<string> params) {
+static void load(list<string> params)
+{   
 
-    for (list<string>::iterator it=params.begin(); it != params.end(); ++it) {
-       // TODO: Implementar
-        unsigned int proximoNodoLibre= ProximoNodoLibre();
-        //send //
+    MPI_Request request;
+
+    for (list<string>::iterator it = params.begin(); it != params.end(); ++it)
+    {
+        // TODO: Implementar
+        unsigned int proximoNodoLibre = ProximoNodoLibre();
+
+        string mensaje = "1" + (*it);
+        cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a " << proximoNodoLibre << endl;
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, proximoNodoLibre, 0, MPI_COMM_WORLD, &request);
     }
-
-
     
-    while(true){
-        //Espero un mensaje diciendo que se libero
-        //recv
-        //Si hay mas de uno los encolo
-        //encolo el que se libero
-        if(nodosLibres->size()==np){
+    cout << "[CONSOLA] mandé todo" << endl;
+    while(true)
+    {
+        // Espero un mensaje diciendo que se libero
+        unsigned int respuesta;
+
+        // Espero que me llegue un mensaje al TAG 1
+        cout << "[CONSOLA] Voy a esperar a que termine alguien" << endl;
+        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        cout << "[CONSOLA] Me acaba de llegar un mensaje de " <<  respuesta << endl;
+
+
+        // Encolo el que se liberó
+        nodosLibres->push(respuesta);
+
+        if (nodosLibres->size() == np - 1)
+        {
             break;
         }
     }
+
+
+
     cout << "La listá esta procesada" << endl;
 }
-unsigned int ProximoNodoLibre(){
+unsigned int ProximoNodoLibre()
+{
     unsigned int res;
     if (nodosLibres->empty())
     {
-        //PREGUNTAR! Como y donde atender los mensajes? Un thread? 
-        //Espero un mensaje diciendo que se libero
-        //recv
-        //Si hay mas de uno los encolo
-        //encolo el que se libero
+        unsigned int respuesta;
+        // Espero que me llegue un mensaje al TAG 1
+        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        // Encolo el que se liberó
+        nodosLibres->push(respuesta);
+        
     }
-    return nodosLibres->pop();
+
+    // Devuelvo el siguiente libre
+    res = nodosLibres->front();
+    nodosLibres->pop();
+    return res;
 
 }
 
 // Esta función debe avisar a todos los nodos que deben terminar
-static void quit() {
+static void quit()
+{
     // TODO: Implementar
-
+    cout << "[CONSOLA] Kiteando..." << endl;
     for (int i = 0; i < nodosLibres->size(); ++i)
     {
+        cout << "[CONSOLA] Voy a poppear (" << i << "/" << nodosLibres->size() << ")" << endl;
         nodosLibres->pop();
     }
+    cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
     delete nodosLibres;
+    cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
 }
 
 // Esta función calcula el máximo con todos los nodos
-static void maximum() {
+static void maximum()
+{
     pair<string, unsigned int> result;
 
     // TODO: Implementar
@@ -80,7 +111,8 @@ static void maximum() {
 }
 
 // Esta función busca la existencia de *key* en algún nodo
-static void member(string key) {
+static void member(string key)
+{
     bool esta = false;
 
     // TODO: Implementar
@@ -90,10 +122,10 @@ static void member(string key) {
 
 
 // Esta función suma uno a *key* en algún nodo
-static void addAndInc(string key) {
+static void addAndInc(string key)
+{
 
     // TODO: Implementar
-
     cout << "Agregado: " << key << endl;
 }
 
@@ -123,7 +155,7 @@ static bool procesar_comandos() {
         return false;
 
     // Sacamos último carácter
-    buffer[buffer_length-1] = '\0';
+    buffer[buffer_length - 1] = '\0';
 
     // Obtenemos el primer parámetro
     first_param = strtok(buffer, " ");
@@ -183,7 +215,9 @@ static bool procesar_comandos() {
 
 void consola(unsigned int np_param) {
     np = np_param;
+
     InicializarEstructuras();
+
     printf("Comandos disponibles:\n");
     printf("  "CMD_LOAD" <arch_1> <arch_2> ... <arch_n>\n");
     printf("  "CMD_ADD" <string>\n");
@@ -198,10 +232,13 @@ void consola(unsigned int np_param) {
         fin = procesar_comandos();
     }
 }
-void InicializarEstructuras(){
+void InicializarEstructuras()
+{
     //Inicializo la cola de nodos libres.
     nodosLibres = new queue<unsigned int>();
-    for (unsigned int i = 0; i < np; i++)
+
+    // Excluimos el 0 ya que es la consola
+    for (unsigned int i = 1; i < np; i++)
     {
         nodosLibres->push(i);
     }
