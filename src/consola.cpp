@@ -10,6 +10,7 @@
 #include "HashMap.hpp"
 #include "mpi.h"
 #include <queue> 
+#include "nodo.hpp"
 using namespace std;
 
 #define CMD_LOAD    "load"
@@ -21,6 +22,7 @@ using namespace std;
 
 static unsigned int np;
 queue<unsigned int>* nodosLibres;
+
 // Crea un ConcurrentHashMap distribuido
 static void load(list<string> params)
 {   
@@ -31,8 +33,9 @@ static void load(list<string> params)
     {
         // TODO: Implementar
         unsigned int proximoNodoLibre = ProximoNodoLibre();
-
-        string mensaje = "1" + (*it);
+        std::stringstream out;
+        out << COMANDO_LOAD;
+        string mensaje = out.str() + (*it);
         cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a " << proximoNodoLibre << endl;
         MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, proximoNodoLibre, 0, MPI_COMM_WORLD, &request);
     }
@@ -88,7 +91,7 @@ static void quit()
 {
     // TODO: Implementar
     cout << "[CONSOLA] Kiteando..." << endl;
-    for (int i = 0; i < nodosLibres->size(); ++i)
+    for (unsigned int i = 0; i < nodosLibres->size(); ++i)
     {
         cout << "[CONSOLA] Voy a poppear (" << i << "/" << nodosLibres->size() << ")" << endl;
         nodosLibres->pop();
@@ -124,8 +127,40 @@ static void member(string key)
 // Esta función suma uno a *key* en algún nodo
 static void addAndInc(string key)
 {
+    
+    MPI_Request request;
+    std::stringstream out;
+    out << COMANDO_TRY_ADD_AND_INC;
+    string mensaje = out.str();
+    
+    //MPI_Bcast((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //PREGUNTAR alternativa de Broadcast, ya que requiere usar broadcast para recibir
+    for (unsigned int i = 1; i < np; ++i)
+    {
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+    }
+    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    // Espero un mensaje diciendo que quiere hacer el addAndInc
+    unsigned int respuesta;
+    // Espero que me llegue un mensaje al TAG 1
+    cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+    MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
+    cout << "[CONSOLA] El nodo " <<  respuesta << " me acaba de avisar que va a hacer el AddAndInc" << endl;
 
-    // TODO: Implementar
+    std::stringstream out1;
+    out1 << COMANDO_DO_ADD_AND_INC;
+    mensaje = out1.str()+ key;    
+    MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, respuesta, 0, MPI_COMM_WORLD, &request);
+    cout << "[CONSOLA] Le aviso al nodo " <<  respuesta << " que haga el AddAndInc" << endl;
+    //PREGUNTAR COMO DESCARTAR MENSAJES NO LEIDOS.
+    for (unsigned int i = 0; i < np-2; ++i)
+    {
+        unsigned int descarto;
+        MPI_Recv((void*) &descarto, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    //Espero que termine de agregarlo por el tag 100
+    MPI_Recv((void*) &respuesta, 1, MPI_INT, respuesta, 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
     cout << "Agregado: " << key << endl;
 }
 

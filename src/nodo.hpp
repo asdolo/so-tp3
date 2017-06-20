@@ -5,6 +5,11 @@
 #define MPI_SOURCE_CONSOLA 0
 
 #define COMANDO_LOAD 1
+#define COMANDO_TRY_ADD_AND_INC 2
+#define COMANDO_DO_ADD_AND_INC 3
+
+#define convertToString(x) #x
+
 
 /* Función que maneja un nodo.
  * Recibe el rank del nodo.

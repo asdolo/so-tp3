@@ -21,6 +21,7 @@ void nodo(unsigned int rank) {
 
         MPI_Status status;
         MPI_Request request;
+        
         // Espero que me llegue un mensaje al TAG 0
         MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_SOURCE_CONSOLA, 0, MPI_COMM_WORLD, &status);
 
@@ -31,14 +32,14 @@ void nodo(unsigned int rank) {
         string comando = respuestaString.substr(0,1);
         int numeroComando = atoi(comando.c_str());
 
-        string nombreArchivo;
+        string restoDelMensaje;
         switch(numeroComando)
         {
         	case COMANDO_LOAD:
                 cout << "[nodo" << rank << "] " << "Voy a cargar el archivo" << endl;
-                nombreArchivo = respuestaString.substr(1, respuestaString.length() - 1);
+                restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
 
-                hashMapLocal->load(nombreArchivo);
+                hashMapLocal->load(restoDelMensaje);
                 cout << "[nodo" << rank << "] " << "Lo cargué" << endl;
 
                 hashMapLocal->printAll();
@@ -47,19 +48,35 @@ void nodo(unsigned int rank) {
         		trabajarArduamente();
         		  
                 // Le aviso a la consola que terminé
-                cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé" << endl;
+                cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé el load" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
 
                 break;
+
+            
+            case COMANDO_TRY_ADD_AND_INC:   
+                cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
+                trabajarArduamente();// PREGUNTAR SI IRIA ACA...
                 
+                cout << "[nodo" << rank << "] " << "Le aviso a la consola que quiero hacer el addAndInc yo" << endl;
+                MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
+                break;
+
+            case COMANDO_DO_ADD_AND_INC:   
+                cout << "[nodo" << rank << "] " << "Me aviso la consola que debo hacer el addAndInc yo" << endl;
+                restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
+                hashMapLocal->addAndInc(restoDelMensaje);
+
+                cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
+                trabajarArduamente();// PREGUNTAR SI IRIA ACA...
+
+                cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé el addAndInc" << endl;
+                MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 100, MPI_COMM_WORLD, &request);
+                break;
+
         	default:
         	   break;
         }
-
-
-
-
-
     }
 }
 
