@@ -11,6 +11,13 @@
 #define COMANDO_MAXIMUM 5
 #define COMANDO_QUIT 6
 
+#define TAG_CONSOLA_SALIDA 0
+#define TAG_CONSOLA_ENTRANTE 1
+
+#define TAG_NODO_SALIDA 1
+#define TAG_NODO_ENTRANTE 0
+#define TAG_ADDANDINC 100
+
 #define convertToString(x) #x
 
 

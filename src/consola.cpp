@@ -36,20 +36,20 @@ static void load(list<string> params)
         std::stringstream out;
         out << COMANDO_LOAD;
         string mensaje = out.str() + (*it);
-        cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a " << proximoNodoLibre << endl;
-        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, proximoNodoLibre, 0, MPI_COMM_WORLD, &request);
+        //cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a " << proximoNodoLibre << endl;
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, proximoNodoLibre, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
     }
     
-    cout << "[CONSOLA] mandé todo" << endl;
+    //cout << "[CONSOLA] mandé todo" << endl;
     while(true)
     {
         // Espero un mensaje diciendo que se libero
         unsigned int respuesta;
 
         // Espero que me llegue un mensaje al TAG 1
-        cout << "[CONSOLA] Voy a esperar a que termine alguien" << endl;
-        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        cout << "[CONSOLA] Me acaba de llegar un mensaje de " <<  respuesta << endl;
+        //cout << "[CONSOLA] Voy a esperar a que termine alguien" << endl;
+        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //cout << "[CONSOLA] Me acaba de llegar un mensaje de " <<  respuesta << endl;
 
 
         // Encolo el que se liberó
@@ -72,7 +72,7 @@ unsigned int ProximoNodoLibre()
     {
         unsigned int respuesta;
         // Espero que me llegue un mensaje al TAG 1
-        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Encolo el que se liberó
         nodosLibres->push(respuesta);
@@ -90,15 +90,15 @@ unsigned int ProximoNodoLibre()
 static void quit()
 {
     // TODO: Implementar
-    cout << "[CONSOLA] Kiteando..." << endl;
+    //cout << "[CONSOLA] Kiteando..." << endl;
     for (unsigned int i = 0; i < nodosLibres->size(); ++i)
     {
-        cout << "[CONSOLA] Voy a poppear (" << i << "/" << nodosLibres->size() << ")" << endl;
+        //cout << "[CONSOLA] Voy a poppear (" << i << "/" << nodosLibres->size() << ")" << endl;
         nodosLibres->pop();
     }
-    cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
+    //cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
     delete nodosLibres;
-    cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
+    //cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
 
     
     
@@ -108,9 +108,9 @@ static void quit()
     string mensaje = out.str();
     for (unsigned int i = 1; i < np; ++i)
     {
-        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
     }
-    //ADIOS!
+    cout << "ADIOS VUELVAS PRONTOS!" << endl;
 }
 
 // Esta función calcula el máximo con todos los nodos
@@ -125,17 +125,17 @@ static void maximum()
     string mensaje = out.str();
     for (unsigned int i = 1; i < np; ++i)
     {
-        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
     }
-    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    //cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
     
     char respuesta[BUFFER_SIZE];
     unsigned int terminados=0;
     HashMap* hashMapLocal = new HashMap();
     while(terminados<np-1){
-        cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
-        MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
-        cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
+        //cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+        MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, &status);
+        //cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
         if (respuesta[0]=='0')
         {
             terminados++;
@@ -162,16 +162,16 @@ static void member(string key)
    
     for (unsigned int i = 1; i < np; ++i)
     {
-        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
     }
-    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    //cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
     // Espero un mensaje diciendo que quiere hacer el addAndInc
     unsigned int respuesta;
     for (unsigned int i = 1; i < np; ++i)
     {
-     cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
-     MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
-     cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
+     //cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+     MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
+     //cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
      if (respuesta==1)
      {
          esta=true;
@@ -193,29 +193,29 @@ static void addAndInc(string key)
     
     for (unsigned int i = 1; i < np; ++i)
     {
-        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
     }
-    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    //cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
     // Espero un mensaje diciendo que quiere hacer el addAndInc
     unsigned int respuesta;
     // Espero que me llegue un mensaje al TAG 1
-    cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
-    MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
-    cout << "[CONSOLA] El nodo " <<  respuesta << " me acaba de avisar que va a hacer el AddAndInc" << endl;
+    //cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+    MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
+    //cout << "[CONSOLA] El nodo " <<  respuesta << " me acaba de avisar que va a hacer el AddAndInc" << endl;
 
     std::stringstream out1;
     out1 << COMANDO_DO_ADD_AND_INC;
     mensaje = out1.str()+ key;    
-    MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, respuesta, 0, MPI_COMM_WORLD, &request);
-    cout << "[CONSOLA] Le aviso al nodo " <<  respuesta << " que haga el AddAndInc" << endl;
+    MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, respuesta, TAG_CONSOLA_SALIDA, MPI_COMM_WORLD, &request);
+    //cout << "[CONSOLA] Le aviso al nodo " <<  respuesta << " que haga el AddAndInc" << endl;
     
     for (unsigned int i = 0; i < np-2; ++i)
     {
         unsigned int descarto;
-        MPI_Recv((void*) &descarto, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv((void*) &descarto, 1, MPI_INT, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
-    //Espero que termine de agregarlo por el tag 100
-    MPI_Recv((void*) &respuesta, 1, MPI_INT, respuesta, 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    //Espero que termine de agregarlo por el tag TAG_ADDANDINC
+    MPI_Recv((void*) &respuesta, 1, MPI_INT, respuesta, TAG_ADDANDINC, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     cout << "Agregado: " << key << endl;
 }
