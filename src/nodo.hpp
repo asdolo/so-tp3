@@ -7,6 +7,7 @@
 #define COMANDO_LOAD 1
 #define COMANDO_TRY_ADD_AND_INC 2
 #define COMANDO_DO_ADD_AND_INC 3
+#define COMANDO_MEMBER 4
 
 #define convertToString(x) #x
 

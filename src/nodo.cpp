@@ -33,6 +33,8 @@ void nodo(unsigned int rank) {
         int numeroComando = atoi(comando.c_str());
 
         string restoDelMensaje;
+        bool result;
+        unsigned int resultado;
         switch(numeroComando)
         {
         	case COMANDO_LOAD:
@@ -73,7 +75,21 @@ void nodo(unsigned int rank) {
                 cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé el addAndInc" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 100, MPI_COMM_WORLD, &request);
                 break;
-
+            case COMANDO_MEMBER:
+                restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
+                cout << "[nodo" << rank << "] " << "Me aviso la consola que debo buscar la palabra " << restoDelMensaje << endl;
+                result= hashMapLocal->member(restoDelMensaje);
+                if (result)
+                {
+                    resultado=1;
+                }else{
+                    resultado=0;
+                }
+                cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
+                trabajarArduamente();
+                cout << "[nodo" << rank << "] " << "Le aviso a la consola que el resultado de member es:" << resultado << endl;
+                MPI_Isend((void*) (&resultado), 1, MPI_INT, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
+                break;
         	default:
         	   break;
         }

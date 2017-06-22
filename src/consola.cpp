@@ -119,7 +119,30 @@ static void member(string key)
     bool esta = false;
 
     // TODO: Implementar
-
+    MPI_Request request;
+    std::stringstream out;
+    out << COMANDO_MEMBER;
+    out << key;
+    string mensaje = out.str();
+    //MPI_Bcast((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    //PREGUNTAR alternativa de Broadcast, ya que requiere usar broadcast para recibir
+    for (unsigned int i = 1; i < np; ++i)
+    {
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+    }
+    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    // Espero un mensaje diciendo que quiere hacer el addAndInc
+    unsigned int respuesta;
+    for (unsigned int i = 1; i < np; ++i)
+    {
+       cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+       MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
+       cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
+       if (respuesta==1)
+       {
+           esta=true;
+       }
+    }
     cout << "El string <" << key << (esta ? ">" : "> no") << " está" << endl;
 }
 
@@ -135,7 +158,7 @@ static void addAndInc(string key)
     
     //MPI_Bcast((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
     //PREGUNTAR alternativa de Broadcast, ya que requiere usar broadcast para recibir
-    for (unsigned int i = 1; i < np; ++i)
+   for (unsigned int i = 1; i < np; ++i)
     {
         MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
     }
