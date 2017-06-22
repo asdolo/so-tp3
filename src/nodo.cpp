@@ -9,13 +9,14 @@
 
 using namespace std;
 HashMap* hashMapLocal;
+
 void nodo(unsigned int rank) {
     printf("Soy un nodo. Mi rank es %d \n", rank);
-
+    bool correr=true;
     // TODO: Implementar
     // Creo un HashMap loal
     hashMapLocal= new HashMap();
-    while (true)
+    while (correr)
     {
         char respuesta[BUFFER_SIZE];
 
@@ -35,6 +36,7 @@ void nodo(unsigned int rank) {
         string restoDelMensaje;
         bool result;
         unsigned int resultado;
+        string mensaje;
         switch(numeroComando)
         {
         	case COMANDO_LOAD:
@@ -58,7 +60,7 @@ void nodo(unsigned int rank) {
             
             case COMANDO_TRY_ADD_AND_INC:   
                 cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
-                trabajarArduamente();// PREGUNTAR SI IRIA ACA...
+                //trabajarArduamente();// No va aca, es mensaje interno
                 
                 cout << "[nodo" << rank << "] " << "Le aviso a la consola que quiero hacer el addAndInc yo" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
@@ -70,8 +72,7 @@ void nodo(unsigned int rank) {
                 hashMapLocal->addAndInc(restoDelMensaje);
 
                 cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
-                trabajarArduamente();// PREGUNTAR SI IRIA ACA...
-
+                trabajarArduamente();
                 cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé el addAndInc" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, 100, MPI_COMM_WORLD, &request);
                 break;
@@ -89,6 +90,22 @@ void nodo(unsigned int rank) {
                 trabajarArduamente();
                 cout << "[nodo" << rank << "] " << "Le aviso a la consola que el resultado de member es:" << resultado << endl;
                 MPI_Isend((void*) (&resultado), 1, MPI_INT, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
+                break;
+            case COMANDO_MAXIMUM:
+                cout << "[nodo" << rank << "] " << "Me aviso la consola que debo enviar todas las palabras para maximum "<< endl;             
+                 
+                for (HashMap::iterator it= hashMapLocal->begin(); it!=hashMapLocal->end(); it++)
+                {
+                    mensaje=*it;
+
+                    MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
+                }
+                mensaje="0";
+                MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, MPI_SOURCE_CONSOLA, 1, MPI_COMM_WORLD, &request);
+                break;
+                case COMANDO_QUIT:
+                    correr=false;
+                    //ADIOS!
                 break;
         	default:
         	   break;

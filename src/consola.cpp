@@ -99,17 +99,52 @@ static void quit()
     cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
     delete nodosLibres;
     cout << "[CONSOLA] Terminé de poppear todos los nodos libres" << endl;
+
+    
+    
+    MPI_Request request;
+    std::stringstream out;
+    out << COMANDO_QUIT;
+    string mensaje = out.str();
+    for (unsigned int i = 1; i < np; ++i)
+    {
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+    }
+    //ADIOS!
 }
 
 // Esta función calcula el máximo con todos los nodos
 static void maximum()
 {
-    pair<string, unsigned int> result;
-
+    
     // TODO: Implementar
-    string str("a");
-    result = make_pair(str,10);
-
+    MPI_Status status;
+    MPI_Request request;
+    std::stringstream out;
+    out << COMANDO_MAXIMUM;
+    string mensaje = out.str();
+    for (unsigned int i = 1; i < np; ++i)
+    {
+        MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
+    }
+    cout << "[CONSOLA] mandé el mensaje \"" << mensaje << "\" cuyo tamaño es " << mensaje.size() << " a todos" << endl;
+    
+    char respuesta[BUFFER_SIZE];
+    unsigned int terminados=0;
+    HashMap* hashMapLocal = new HashMap();
+    while(terminados<np-1){
+        cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+        MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+        cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
+        if (respuesta[0]=='0')
+        {
+            terminados++;
+        }else{
+            hashMapLocal->addAndInc(respuesta);
+        }
+    }
+    pair<string, unsigned int> result = hashMapLocal->maximum();
+    delete hashMapLocal;
     cout << "El máximo es <" << result.first <<"," << result.second << ">" << endl;
 }
 
@@ -124,8 +159,7 @@ static void member(string key)
     out << COMANDO_MEMBER;
     out << key;
     string mensaje = out.str();
-    //MPI_Bcast((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    //PREGUNTAR alternativa de Broadcast, ya que requiere usar broadcast para recibir
+   
     for (unsigned int i = 1; i < np; ++i)
     {
         MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
@@ -135,30 +169,29 @@ static void member(string key)
     unsigned int respuesta;
     for (unsigned int i = 1; i < np; ++i)
     {
-       cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
-       MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
-       cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
-       if (respuesta==1)
-       {
-           esta=true;
-       }
-    }
-    cout << "El string <" << key << (esta ? ">" : "> no") << " está" << endl;
+     cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
+     MPI_Recv((void*) &respuesta, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);    
+     cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
+     if (respuesta==1)
+     {
+         esta=true;
+     }
+ }
+ cout << "El string <" << key << (esta ? ">" : "> no") << " está" << endl;
 }
 
 
 // Esta función suma uno a *key* en algún nodo
 static void addAndInc(string key)
 {
-    
+
     MPI_Request request;
     std::stringstream out;
     out << COMANDO_TRY_ADD_AND_INC;
     string mensaje = out.str();
     
-    //MPI_Bcast((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    //PREGUNTAR alternativa de Broadcast, ya que requiere usar broadcast para recibir
-   for (unsigned int i = 1; i < np; ++i)
+    
+    for (unsigned int i = 1; i < np; ++i)
     {
         MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, i, 0, MPI_COMM_WORLD, &request);
     }
@@ -175,7 +208,7 @@ static void addAndInc(string key)
     mensaje = out1.str()+ key;    
     MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, respuesta, 0, MPI_COMM_WORLD, &request);
     cout << "[CONSOLA] Le aviso al nodo " <<  respuesta << " que haga el AddAndInc" << endl;
-    //PREGUNTAR COMO DESCARTAR MENSAJES NO LEIDOS.
+    
     for (unsigned int i = 0; i < np-2; ++i)
     {
         unsigned int descarto;
@@ -222,53 +255,53 @@ static bool procesar_comandos() {
         strncmp(first_param, CMD_SQUIT, sizeof(CMD_SQUIT))==0) {
 
         quit();
-        return true;
-    }
+    return true;
+}
 
-    if (strncmp(first_param, CMD_MAXIMUM, sizeof(CMD_MAXIMUM))==0) {
-        maximum();
-        return false;
-    }
+if (strncmp(first_param, CMD_MAXIMUM, sizeof(CMD_MAXIMUM))==0) {
+    maximum();
+    return false;
+}
 
     // Obtenemos el segundo parámetro
-    second_param = strtok(NULL, " ");
-    if (strncmp(first_param, CMD_MEMBER, sizeof(CMD_MEMBER))==0) {
-        if (second_param != NULL) {
-            string s(second_param);
-            member(s);
-        }
-        else {
-            printf("Falta un parámetro\n");
-        }
-        return false;
+second_param = strtok(NULL, " ");
+if (strncmp(first_param, CMD_MEMBER, sizeof(CMD_MEMBER))==0) {
+    if (second_param != NULL) {
+        string s(second_param);
+        member(s);
     }
-
-    if (strncmp(first_param, CMD_ADD, sizeof(CMD_ADD))==0) {
-        if (second_param != NULL) {
-            string s(second_param);
-            addAndInc(s);
-        }
-        else {
-            printf("Falta un parámetro\n");
-        }
-        return false;
+    else {
+        printf("Falta un parámetro\n");
     }
-
-    if (strncmp(first_param, CMD_LOAD, sizeof(CMD_LOAD))==0) {
-        list<string> params;
-        while (second_param != NULL)
-        {
-            string s(second_param);
-            params.push_back(s);
-            second_param = strtok(NULL, " ");
-        }
-
-        load(params);
-        return false;
-    }
-
-    printf("Comando no reconocido");
     return false;
+}
+
+if (strncmp(first_param, CMD_ADD, sizeof(CMD_ADD))==0) {
+    if (second_param != NULL) {
+        string s(second_param);
+        addAndInc(s);
+    }
+    else {
+        printf("Falta un parámetro\n");
+    }
+    return false;
+}
+
+if (strncmp(first_param, CMD_LOAD, sizeof(CMD_LOAD))==0) {
+    list<string> params;
+    while (second_param != NULL)
+    {
+        string s(second_param);
+        params.push_back(s);
+        second_param = strtok(NULL, " ");
+    }
+
+    load(params);
+    return false;
+}
+
+printf("Comando no reconocido");
+return false;
 }
 
 void consola(unsigned int np_param) {
