@@ -11,6 +11,12 @@
 #include "mpi.h"
 #include <queue> 
 #include "nodo.hpp"
+#include <algorithm>    // std::sort
+#include <iostream>     // std::cout
+#include <fstream>      // std::ifstream
+#include <sstream>      // std::stringstream
+#include <assert.h>      // std::stringstream
+#include <vector>
 using namespace std;
 
 #define CMD_LOAD    "load"
@@ -22,6 +28,7 @@ using namespace std;
 
 static unsigned int np;
 queue<unsigned int>* nodosLibres;
+ofstream test;
 
 // Crea un ConcurrentHashMap distribuido
 static void load(list<string> params)
@@ -132,7 +139,7 @@ static void maximum()
     char respuesta[BUFFER_SIZE];
     unsigned int terminados=0;
     HashMap* hashMapLocal = new HashMap();
-    while(terminados<np-1){
+    while(terminados < np-1){
         //cout << "[CONSOLA] Voy a esperar a que me responda alguien" << endl;
         MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_ANY_SOURCE, TAG_CONSOLA_ENTRANTE, MPI_COMM_WORLD, &status);
         //cout << "[CONSOLA] Un nodo envio" <<  respuesta  << endl;
@@ -140,12 +147,18 @@ static void maximum()
         {
             terminados++;
         }else{
+
             hashMapLocal->addAndInc(respuesta);
         }
     }
     pair<string, unsigned int> result = hashMapLocal->maximum();
     delete hashMapLocal;
+
     cout << "El máximo es <" << result.first <<"," << result.second << ">" << endl;
+    test.open("output-maximum.txt", std::ofstream::out | std::ofstream::app);
+    test << "<" << result.first <<"," << result.second << ">";
+    test << endl;
+    test.close();
 }
 
 // Esta función busca la existencia de *key* en algún nodo
@@ -177,7 +190,13 @@ static void member(string key)
          esta=true;
      }
  }
- cout << "El string <" << key << (esta ? ">" : "> no") << " está" << endl;
+
+    test.open("output-member.txt", std::ofstream::out | std::ofstream::app);
+    test << (esta == true ? "true" : "false");
+    test << endl;
+    test.close();
+
+    cout << "El string <" << key << (esta ? ">" : "> no") << " está" << endl;
 }
 
 

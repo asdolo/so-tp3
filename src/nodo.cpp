@@ -5,7 +5,12 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string> 
-
+#include <algorithm>    // std::sort
+#include <iostream>     // std::cout
+#include <fstream>      // std::ifstream
+#include <sstream>      // std::stringstream
+#include <assert.h>      // std::stringstream
+#include <vector>
 
 using namespace std;
 HashMap* hashMapLocal;
@@ -16,12 +21,17 @@ void nodo(unsigned int rank) {
     // TODO: Implementar
     // Creo un HashMap loal
     hashMapLocal= new HashMap();
+    
+    ofstream test;
+
     while (correr)
     {
         char respuesta[BUFFER_SIZE];
-
         MPI_Status status;
         MPI_Request request;
+        
+        
+        
         
         // Espero que me llegue un mensaje al TAG 0
         MPI_Recv((void*) respuesta, BUFFER_SIZE, MPI_CHAR, MPI_SOURCE_CONSOLA, TAG_NODO_ENTRANTE, MPI_COMM_WORLD, &status);
@@ -40,13 +50,23 @@ void nodo(unsigned int rank) {
         switch(numeroComando)
         {
         	case COMANDO_LOAD:
+
                 //cout << "[nodo" << rank << "] " << "Voy a cargar el archivo" << endl;
                 restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
 
                 hashMapLocal->load(restoDelMensaje);
                 //cout << "[nodo" << rank << "] " << "Lo cargué" << endl;
 
-                hashMapLocal->printAll();
+                //hashMapLocal->printAll();
+
+                test.open("output-load.txt", std::ofstream::out | std::ofstream::app);
+                for (HashMap::iterator it= hashMapLocal->begin(); it!=hashMapLocal->end(); it++)
+                {
+                    mensaje=*it;
+                    test << mensaje;
+                    test <<endl;
+                }
+                test.close();
 
                 //cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
         		trabajarArduamente();
@@ -64,17 +84,23 @@ void nodo(unsigned int rank) {
                 
                 //cout << "[nodo" << rank << "] " << "Le aviso a la consola que quiero hacer el addAndInc yo" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, TAG_NODO_SALIDA, MPI_COMM_WORLD, &request);
+
                 break;
 
             case COMANDO_DO_ADD_AND_INC:   
                 //cout << "[nodo" << rank << "] " << "Me aviso la consola que debo hacer el addAndInc yo" << endl;
                 restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
                 hashMapLocal->addAndInc(restoDelMensaje);
-
+                test.open("output-add-and-inc.txt", std::ofstream::out | std::ofstream::app);
+                test << restoDelMensaje;
+                test << endl;
+                test.close();
+                
                 //cout << "[nodo" << rank << "] " << "Voy a trabajar arduamente" << endl;
                 trabajarArduamente();
                 //cout << "[nodo" << rank << "] " << "Le aviso a la consola que terminé el addAndInc" << endl;
                 MPI_Isend((void*) (&rank), 1, MPI_INT, MPI_SOURCE_CONSOLA, TAG_ADDANDINC, MPI_COMM_WORLD, &request);
+
                 break;
             case COMANDO_MEMBER:
                 restoDelMensaje = respuestaString.substr(1, respuestaString.length() - 1);
@@ -96,12 +122,14 @@ void nodo(unsigned int rank) {
                  
                 for (HashMap::iterator it= hashMapLocal->begin(); it!=hashMapLocal->end(); it++)
                 {
+                    trabajarArduamente();
                     mensaje=*it;
-
                     MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, MPI_SOURCE_CONSOLA, TAG_NODO_SALIDA, MPI_COMM_WORLD, &request);
                 }
                 mensaje="0";
+                trabajarArduamente();
                 MPI_Isend((void*) mensaje.c_str(), mensaje.size() + 1, MPI_CHAR, MPI_SOURCE_CONSOLA, TAG_NODO_SALIDA, MPI_COMM_WORLD, &request);
+
                 break;
                 case COMANDO_QUIT:
 
@@ -114,7 +142,7 @@ void nodo(unsigned int rank) {
     }
 
 
-
+    
 
     //LIBERO MEMORIA
     delete hashMapLocal;
